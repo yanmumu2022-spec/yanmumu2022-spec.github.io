@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>上海退休+缴费年限计算器</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;padding:15px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:#f5f7fa;color:#333}
+.container{max-width:400px;margin:0 auto;background:#fff;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.08);padding:20px}
+h1{font-size:19px;text-align:center;margin:0 0 20px;color:#222}
+.item{margin-bottom:15px}
+label{display:block;margin-bottom:6px;font-weight:500;color:#444}
+select,input{width:100%;padding:12px 14px;border:1px solid #ddd;border-radius:10px;font-size:15px}
+button{width:100%;padding:14px;background:#07c160;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:bold;margin-top:10px}
+.result{margin-top:20px;padding:16px;background:#f0fdf4;border-radius:12px;line-height:1.6;font-size:15px}
+.note{font-size:13px;color:#666;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>上海退休·缴费年限计算器</h1>
+
+  <div class="item">
+    <label>性别</label>
+    <select id="gender">
+      <option value="male">男</option>
+      <option value="female">女</option>
+    </select>
+  </div>
+
+  <div class="item" id="jobWrap" style="display:none">
+    <label>女性身份</label>
+    <select id="jobType">
+      <option value="worker">女工人（50岁档）</option>
+      <option value="leader">女干部/管理/灵活就业（55岁档）</option>
+    </select>
+  </div>
+
+  <div class="item">
+    <label>出生年份</label>
+    <input type="number" id="birthYear" placeholder="例如：1992" min="1960" max="2005">
+  </div>
+
+  <div class="item">
+    <label>全国已缴年限（年）</label>
+    <input type="number" id="totalPaid" placeholder="例如：5" min="0" max="40">
+  </div>
+
+  <div class="item">
+    <label>上海已缴年限（年）</label>
+    <input type="number" id="shPaid" placeholder="例如：3" min="0" max="40">
+  </div>
+
+  <button onclick="compute()">计算</button>
+
+  <div id="result" class="result" style="display:none"></div>
+</div>
+
+<script>
+// 女身份显示/隐藏
+document.getElementById('gender').addEventListener('change', function(){
+  document.getElementById('jobWrap').style.display = this.value=='female'?'block':'none'
+})
+
+function compute(){
+  const gender = document.getElementById('gender').value
+  const jobType = document.getElementById('jobType').value
+  const year = parseInt(document.getElementById('birthYear').value)
+  const totalPaid = parseFloat(document.getElementById('totalPaid').value||0)
+  const shPaid = parseFloat(document.getElementById('shPaid').value||0)
+
+  if(!year){
+    alert('请输入出生年份')
+    return
+  }
+
+  // 1. 算退休年龄 + 退休年份
+  let retireAge, retireYear, identity
+  if(gender === 'male'){
+    if(year < 1975) retireAge=60
+    else if(year < 1990) retireAge=62
+    else retireAge=63
+    identity = '男性职工'
+  }else{
+    if(jobType === 'worker'){
+      if(year < 1975) retireAge=50
+      else if(year < 1990) retireAge=53
+      else retireAge=55
+      identity = '女工人（一线）'
+    }else{
+      if(year < 1975) retireAge=55
+      else if(year < 1990) retireAge=57
+      else retireAge=58
+      identity = '女干部/管理/灵活就业'
+    }
+  }
+  retireYear = year + retireAge
+
+  // 2. 最低缴费年限（你1992年 → 20年）
+  let minYears
+  if(retireYear <= 2029) minYears=15
+  else if(retireYear >= 2039) minYears=20
+  else {
+    // 2030-2038 每年+0.5年
+    minYears = 15 + (retireYear - 2029)*0.5
+  }
+
+  // 3. 还需缴费
+  const needTotal = Math.max(0, minYears - totalPaid)
+  const needSh = Math.max(0, minYears - shPaid)
+
+  // 4. 显示
+  const html = `
+<strong>📌 退休信息</strong><br>
+身份：${identity}<br>
+出生：${year} 年<br>
+退休年龄：${retireAge} 岁<br>
+预计退休：${retireYear} 年<br><br>
+<strong>📊 缴费年限</strong><br>
+全国最低要求：${minYears} 年<br>
+已缴全国：${totalPaid} 年<br>
+<strong>全国还需：${needTotal.toFixed(1)} 年</strong><br><br>
+上海最低要求：${minYears} 年<br>
+已缴上海：${shPaid} 年<br>
+<strong>上海还需：${needSh.toFixed(1)} 年</strong>
+`
+  const res = document.getElementById('result')
+  res.innerHTML = html
+  res.style.display = 'block'
+}
+</script>
+</body>
+</html>
